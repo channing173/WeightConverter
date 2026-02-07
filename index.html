@@ -109,6 +109,35 @@
             max-width: calc(100% - 120px);
             line-height: 33px;
             padding: 10px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .easter-egg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+        
+        .easter-egg-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .easter-egg-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
         }
         
         .hamburger span {
@@ -265,7 +294,11 @@
     </style>
 </head>
 <body>
-    <div class="app-title">Peter's All-In-One Conversion Tool v2.11</div>
+    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.15</div>
+    
+    <div class="easter-egg-overlay" id="easter-egg">
+        <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
+    </div>
     
     <button class="hamburger" onclick="toggleMenu()">
         <span></span>
@@ -291,7 +324,7 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.11</div>
+        <div class="menu-version">v2.15</div>
     </div>
     
     <div class="container">
@@ -344,6 +377,44 @@
         // Store last plate conversion input for re-conversion
         let lastPlateWeight = null;
         let lastPlateUnit = null;
+        
+        // Easter egg tap counter
+        let tapCount = 0;
+        let tapTimer = null;
+        
+        // Easter egg functionality
+        document.getElementById('app-title').addEventListener('click', () => {
+            tapCount++;
+            
+            // Reset timer
+            if (tapTimer) {
+                clearTimeout(tapTimer);
+            }
+            
+            // Set timer to reset tap count after 5 seconds
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 5000);
+            
+            // Check if 10 taps reached
+            if (tapCount >= 10) {
+                tapCount = 0;
+                clearTimeout(tapTimer);
+                showEasterEgg();
+            }
+        });
+        
+        function showEasterEgg() {
+            const overlay = document.getElementById('easter-egg');
+            
+            // Fade in
+            overlay.classList.add('show');
+            
+            // Fade out after 2 seconds
+            setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 2000);
+        }
         
         // Menu functionality
         function toggleMenu() {
@@ -684,14 +755,33 @@
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
             
-            // Add weight display
+            // Add weight display with tap functionality
             const weightDisplay = document.createElement('div');
             weightDisplay.style.textAlign = 'center';
             weightDisplay.style.fontSize = '28px';
             weightDisplay.style.fontWeight = 'bold';
             weightDisplay.style.marginBottom = '20px';
             weightDisplay.style.color = 'var(--button-bg)';
+            weightDisplay.style.cursor = 'pointer';
             weightDisplay.textContent = `${originalWeight} ${displayUnit}`;
+            
+            // Add tap to scroll functionality
+            weightDisplay.addEventListener('click', () => {
+                const container = document.querySelector('.container');
+                const scrollTop = container.scrollTop;
+                const scrollHeight = container.scrollHeight;
+                const clientHeight = container.clientHeight;
+                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px threshold
+                
+                if (isAtBottom) {
+                    // Scroll to top
+                    container.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    // Scroll to bottom
+                    container.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+                }
+            });
+            
             resultsDiv.appendChild(weightDisplay);
             
             // Add column headers

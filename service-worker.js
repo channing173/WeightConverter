@@ -1,7 +1,8 @@
-const CACHE_NAME = 'weight-converter-v2.11';
+const CACHE_NAME = 'weight-converter-v2.15';
 const urlsToCache = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './peter.jpeg'
 ];
 
 // Install service worker
