@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weight-converter-v2.09';
+const CACHE_NAME = 'weight-converter-v2.11';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -17,15 +17,17 @@ self.addEventListener('install', event => {
 // Fetch from cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached version or fetch new version
-        return response || fetch(event.request).then(fetchResponse => {
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, fetchResponse.clone());
-            return fetchResponse;
-          });
+    fetch(event.request)
+      .then(fetchResponse => {
+        // Update cache with new version
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, fetchResponse.clone());
+          return fetchResponse;
         });
+      })
+      .catch(() => {
+        // If network fails, try cache
+        return caches.match(event.request);
       })
   );
 });
