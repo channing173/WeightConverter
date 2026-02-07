@@ -263,7 +263,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title">Peter's All-In-One Conversion Tool v2.08</div>
+    <div class="app-title">Peter's All-In-One Conversion Tool v2.09</div>
     
     <button class="hamburger" onclick="toggleMenu()">
         <span></span>
@@ -286,7 +286,10 @@
         <div class="menu-item">
             <button class="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
         </div>
-        <div class="menu-version">v2.08</div>
+        <div class="menu-item">
+            <button class="menu-button" onclick="forceUpdate()">Update</button>
+        </div>
+        <div class="menu-version">v2.09</div>
     </div>
     
     <div class="container">
@@ -478,6 +481,33 @@
             
             // Close menu after toggling
             toggleMenu();
+        }
+        
+        // Force update functionality
+        function forceUpdate() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(registration => {
+                    if (registration) {
+                        registration.update().then(() => {
+                            // Clear all caches
+                            caches.keys().then(cacheNames => {
+                                return Promise.all(
+                                    cacheNames.map(cacheName => caches.delete(cacheName))
+                                );
+                            }).then(() => {
+                                // Reload the page
+                                window.location.reload(true);
+                            });
+                        });
+                    } else {
+                        // No service worker, just hard reload
+                        window.location.reload(true);
+                    }
+                });
+            } else {
+                // No service worker support, just hard reload
+                window.location.reload(true);
+            }
         }
         
         // Load saved theme on page load

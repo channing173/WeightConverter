@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weight-converter-v2.08';
+const CACHE_NAME = 'weight-converter-v2.09';
 const urlsToCache = [
   './index.html',
   './manifest.json'
