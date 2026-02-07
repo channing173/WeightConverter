@@ -353,6 +353,9 @@
                 { weight: '5', total: num5s, perSide: num5s / 2, radius: 15 },
                 { weight: '2.5', total: numsmalls, perSide: numsmalls / 2, radius: 12 }
             ]);
+            
+            // Clear input field after conversion
+            document.getElementById('weight-input').value = '';
         }
         
         function displayResults(weights) {
