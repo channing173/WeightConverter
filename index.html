@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.18</div>
+    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.21</div>
     
     <div class="easter-egg-overlay" id="easter-egg">
         <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
@@ -325,7 +325,7 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.18</div>
+        <div class="menu-version">v2.21</div>
     </div>
     
     <div class="container">
@@ -666,7 +666,7 @@
             // Scroll to bottom after conversion
             setTimeout(() => {
                 const container = document.querySelector('.container');
-                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                container.scrollTo({ top: container.scrollHeight + 100, behavior: 'smooth' });
             }, 100);
         }
         
@@ -781,11 +781,11 @@
                 const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px threshold
                 
                 if (isAtBottom) {
-                    // Scroll to top
-                    container.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Scroll to top (subtract extra to ensure we reach the start)
+                    container.scrollTo({ top: -100, behavior: 'smooth' });
                 } else {
-                    // Scroll to bottom
-                    container.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+                    // Scroll to bottom (add extra to ensure we reach the end)
+                    container.scrollTo({ top: scrollHeight + 100, behavior: 'smooth' });
                 }
             });
             
