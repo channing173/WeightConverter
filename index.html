@@ -208,7 +208,7 @@
         
         h1 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
         
         .input-section {
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.22</div>
+    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.25</div>
     
     <div class="easter-egg-overlay" id="easter-egg">
         <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
@@ -325,7 +325,7 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.22</div>
+        <div class="menu-version">v2.25</div>
     </div>
     
     <div class="container">
@@ -334,8 +334,8 @@
             <h1>Plate Converter</h1>
             
             <div class="input-section">
-                <label for="weight-input">Enter weight:</label><br>
                 <input type="number" id="weight-input" step="0.1" placeholder="Enter weight" inputmode="decimal" pattern="[0-9]*">
+                <button onclick="convertWeights()">Convert</button>
                 
                 <div class="checkbox-group">
                     <label>
@@ -345,8 +345,6 @@
                         <input type="checkbox" id="bar-55" onchange="toggleBar('55')"> 55lb bar
                     </label>
                 </div>
-                
-                <button onclick="convertWeights()">Convert</button>
             </div>
             
             <div class="results" id="results"></div>
@@ -357,9 +355,7 @@
             <h1>Unit Converter</h1>
             
             <div class="input-section">
-                <label for="unit-input" id="unit-input-label">Enter value:</label><br>
                 <input type="number" id="unit-input" step="0.1" placeholder="Enter value" inputmode="decimal" pattern="[0-9]*">
-                
                 <button onclick="convertUnits()">Convert</button>
             </div>
             
@@ -431,12 +427,6 @@
             globalUnit = globalUnit === 'lbs' ? 'kg' : 'lbs';
             const button = document.getElementById('unit-toggle');
             button.textContent = globalUnit === 'lbs' ? 'Switch to kg' : 'Switch to lbs';
-            
-            // Update unit input label
-            const unitLabel = document.getElementById('unit-input-label');
-            if (unitLabel) {
-                unitLabel.textContent = globalUnit === 'lbs' ? 'Enter lbs:' : 'Enter kg:';
-            }
             
             // Re-convert plate results if they exist
             if (lastPlateWeight !== null) {
