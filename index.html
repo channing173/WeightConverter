@@ -40,20 +40,20 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
-            overflow: hidden;
         }
         
         .container {
             width: 430px;
             height: 932px;
+            max-height: 100vh;
             background-color: var(--container-bg);
             padding: 20px;
             padding-top: 60px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            overflow-y: scroll;
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
             transition: background-color 0.3s;
+            position: relative;
         }
         
         .dark-mode-toggle {
@@ -295,7 +295,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.17</div>
+    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.18</div>
     
     <div class="easter-egg-overlay" id="easter-egg">
         <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
@@ -325,7 +325,7 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.17</div>
+        <div class="menu-version">v2.18</div>
     </div>
     
     <div class="container">
