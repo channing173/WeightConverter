@@ -155,6 +155,17 @@
             border-bottom: 1px solid rgba(128, 128, 128, 0.3);
         }
         
+        .menu-version {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 11px;
+            color: var(--text-color);
+            opacity: 0.6;
+            padding-left: 5px;
+            padding-top: 5px;
+        }
+        
         .page {
             display: none;
         }
@@ -252,7 +263,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title">Peter's All-In-One Conversion Tool</div>
+    <div class="app-title">Peter's All-In-One Conversion Tool v2.07</div>
     
     <button class="hamburger" onclick="toggleMenu()">
         <span></span>
@@ -270,8 +281,12 @@
             <button class="menu-button" onclick="showPage('unit')">Unit Converter</button>
         </div>
         <div class="menu-item">
+            <button class="menu-button" id="unit-toggle" onclick="toggleGlobalUnit()">Switch to kg</button>
+        </div>
+        <div class="menu-item">
             <button class="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
         </div>
+        <div class="menu-version">v2.07</div>
     </div>
     
     <div class="container">
@@ -303,17 +318,8 @@
             <h1>Unit Converter</h1>
             
             <div class="input-section">
-                <label for="unit-input">Enter value:</label><br>
+                <label for="unit-input" id="unit-input-label">Enter value:</label><br>
                 <input type="number" id="unit-input" step="0.1" placeholder="Enter value" inputmode="decimal" pattern="[0-9]*">
-                
-                <div class="checkbox-group">
-                    <label>
-                        <input type="checkbox" id="lbs-to-kg" checked onchange="toggleUnit('lbs')"> lbs → kg
-                    </label>
-                    <label>
-                        <input type="checkbox" id="kg-to-lbs" onchange="toggleUnit('kg')"> kg → lbs
-                    </label>
-                </div>
                 
                 <button onclick="convertUnits()">Convert</button>
             </div>
@@ -327,12 +333,58 @@
         let lastPlateResults = '';
         let lastUnitResults = '';
         
+        // Global unit system (lbs or kg)
+        let globalUnit = 'lbs';
+        
+        // Store last plate conversion input for re-conversion
+        let lastPlateWeight = null;
+        let lastPlateUnit = null;
+        
         // Menu functionality
         function toggleMenu() {
             const menu = document.querySelector('.menu');
             const overlay = document.querySelector('.menu-overlay');
             menu.classList.toggle('open');
             overlay.classList.toggle('show');
+        }
+        
+        // Global unit toggle
+        function toggleGlobalUnit() {
+            const previousUnit = globalUnit;
+            globalUnit = globalUnit === 'lbs' ? 'kg' : 'lbs';
+            const button = document.getElementById('unit-toggle');
+            button.textContent = globalUnit === 'lbs' ? 'Switch to kg' : 'Switch to lbs';
+            
+            // Update unit input label
+            const unitLabel = document.getElementById('unit-input-label');
+            if (unitLabel) {
+                unitLabel.textContent = globalUnit === 'lbs' ? 'Enter lbs:' : 'Enter kg:';
+            }
+            
+            // Re-convert plate results if they exist
+            if (lastPlateWeight !== null) {
+                // Convert the weight to the new unit
+                let convertedWeight;
+                if (globalUnit === 'kg' && lastPlateUnit === 'lbs') {
+                    convertedWeight = lastPlateWeight * 0.453592;
+                } else if (globalUnit === 'lbs' && lastPlateUnit === 'kg') {
+                    convertedWeight = lastPlateWeight * 2.20462;
+                } else {
+                    convertedWeight = lastPlateWeight;
+                }
+                
+                // Perform the conversion with the new weight
+                performPlateConversion(convertedWeight);
+            } else {
+                // Clear results if no previous conversion
+                document.getElementById('results').innerHTML = '';
+            }
+            
+            // Clear unit converter results when switching
+            lastUnitResults = '';
+            document.getElementById('unit-results').innerHTML = '';
+            
+            toggleMenu();
         }
         
         // Page switching functionality
@@ -357,19 +409,6 @@
             toggleMenu();
         }
         
-        // Unit toggle functionality
-        function toggleUnit(unit) {
-            if (unit === 'lbs') {
-                if (document.getElementById('lbs-to-kg').checked) {
-                    document.getElementById('kg-to-lbs').checked = false;
-                }
-            } else {
-                if (document.getElementById('kg-to-lbs').checked) {
-                    document.getElementById('lbs-to-kg').checked = false;
-                }
-            }
-        }
-        
         // Unit conversion functionality
         function convertUnits() {
             let value = parseFloat(document.getElementById('unit-input').value);
@@ -383,11 +422,11 @@
             let fromUnit;
             let toUnit;
             
-            if (document.getElementById('lbs-to-kg').checked) {
+            if (globalUnit === 'lbs') {
                 result = (value * 0.453592).toFixed(2);
                 fromUnit = 'lbs';
                 toUnit = 'kg';
-            } else if (document.getElementById('kg-to-lbs').checked) {
+            } else {
                 result = (value * 2.20462).toFixed(2);
                 fromUnit = 'kg';
                 toUnit = 'lbs';
@@ -511,50 +550,105 @@
                 return;
             }
             
+            // Store for re-conversion when switching units
+            lastPlateWeight = number;
+            lastPlateUnit = globalUnit;
+            
+            performPlateConversion(number);
+            
+            // Clear input field after conversion
+            document.getElementById('weight-input').value = '';
+        }
+        
+        function performPlateConversion(inputWeight) {
+            let number = inputWeight;
+            
             // Store the original weight for display
             const originalWeight = number;
+            const displayUnit = globalUnit;
             
-            // Subtract barbell weight
+            // Convert to lbs if in kg mode for calculation
+            if (globalUnit === 'kg') {
+                number = number * 2.20462;
+            }
+            
+            // Subtract barbell weight (in lbs)
             if (document.getElementById('bar-45').checked) {
                 number -= 45;
             } else if (document.getElementById('bar-55').checked) {
                 number -= 55;
             }
             
-            // Calculate weights
-            let num45s = Math.trunc(number / 45);
-            if (num45s % 2 !== 0) num45s -= 1;
-            number -= num45s * 45;
-            
-            let num25s = Math.trunc(number / 25);
-            if (num25s % 2 !== 0) num25s -= 1;
-            number -= num25s * 25;
-            
-            let num10s = Math.trunc(number / 10);
-            if (num10s % 2 !== 0) num10s -= 1;
-            number -= num10s * 10;
-            
-            let num5s = Math.trunc(number / 5);
-            if (num5s % 2 !== 0) num5s -= 1;
-            number -= num5s * 5;
-            
-            let numsmalls = Math.trunc(number / 2.5);
-            if (numsmalls % 2 !== 0) numsmalls -= 1;
+            // Calculate weights based on unit system
+            let weights;
+            if (globalUnit === 'lbs') {
+                // Standard lbs plates
+                let num45s = Math.trunc(number / 45);
+                if (num45s % 2 !== 0) num45s -= 1;
+                number -= num45s * 45;
+                
+                let num25s = Math.trunc(number / 25);
+                if (num25s % 2 !== 0) num25s -= 1;
+                number -= num25s * 25;
+                
+                let num10s = Math.trunc(number / 10);
+                if (num10s % 2 !== 0) num10s -= 1;
+                number -= num10s * 10;
+                
+                let num5s = Math.trunc(number / 5);
+                if (num5s % 2 !== 0) num5s -= 1;
+                number -= num5s * 5;
+                
+                let numsmalls = Math.trunc(number / 2.5);
+                if (numsmalls % 2 !== 0) numsmalls -= 1;
+                
+                weights = [
+                    { weight: '45', total: num45s, perSide: num45s / 2, radius: 45, showCircle: true },
+                    { weight: '25', total: num25s, perSide: num25s / 2, radius: 30, showCircle: true },
+                    { weight: '10', total: num10s, perSide: num10s / 2, radius: 20, showCircle: true },
+                    { weight: '5', total: num5s, perSide: num5s / 2, radius: 15, showCircle: true },
+                    { weight: '2.5', total: numsmalls, perSide: numsmalls / 2, radius: 12, showCircle: true }
+                ];
+            } else {
+                // kg plates (20, 15, 10, 5, 2.5, 1.25)
+                let num20s = Math.trunc(number / 44.0925); // 20kg in lbs
+                if (num20s % 2 !== 0) num20s -= 1;
+                number -= num20s * 44.0925;
+                
+                let num15s = Math.trunc(number / 33.0693); // 15kg in lbs
+                if (num15s % 2 !== 0) num15s -= 1;
+                number -= num15s * 33.0693;
+                
+                let num10s = Math.trunc(number / 22.0462); // 10kg in lbs
+                if (num10s % 2 !== 0) num10s -= 1;
+                number -= num10s * 22.0462;
+                
+                let num5s = Math.trunc(number / 11.0231); // 5kg in lbs
+                if (num5s % 2 !== 0) num5s -= 1;
+                number -= num5s * 11.0231;
+                
+                let num2_5s = Math.trunc(number / 5.51156); // 2.5kg in lbs
+                if (num2_5s % 2 !== 0) num2_5s -= 1;
+                number -= num2_5s * 5.51156;
+                
+                let num1_25s = Math.trunc(number / 2.75578); // 1.25kg in lbs
+                if (num1_25s % 2 !== 0) num1_25s -= 1;
+                
+                weights = [
+                    { weight: '20', total: num20s, perSide: num20s / 2, radius: 45, showCircle: true },
+                    { weight: '15', total: num15s, perSide: num15s / 2, radius: 35, showCircle: true },
+                    { weight: '10', total: num10s, perSide: num10s / 2, radius: 25, showCircle: true },
+                    { weight: '5', total: num5s, perSide: num5s / 2, radius: 18, showCircle: true },
+                    { weight: '2.5', total: num2_5s, perSide: num2_5s / 2, radius: 12, showCircle: true },
+                    { weight: '1.25', total: num1_25s, perSide: num1_25s / 2, radius: 10, showCircle: false }
+                ];
+            }
             
             // Display results
-            displayResults([
-                { weight: '45', total: num45s, perSide: num45s / 2, radius: 45 },
-                { weight: '25', total: num25s, perSide: num25s / 2, radius: 30 },
-                { weight: '10', total: num10s, perSide: num10s / 2, radius: 20 },
-                { weight: '5', total: num5s, perSide: num5s / 2, radius: 15 },
-                { weight: '2.5', total: numsmalls, perSide: numsmalls / 2, radius: 12 }
-            ], originalWeight);
-            
-            // Clear input field after conversion
-            document.getElementById('weight-input').value = '';
+            displayResults(weights, originalWeight.toFixed(2), displayUnit);
         }
         
-        function displayResults(weights, originalWeight) {
+        function displayResults(weights, originalWeight, displayUnit) {
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = '';
             
@@ -565,7 +659,7 @@
             weightDisplay.style.fontWeight = 'bold';
             weightDisplay.style.marginBottom = '20px';
             weightDisplay.style.color = 'var(--button-bg)';
-            weightDisplay.textContent = `${originalWeight} lbs`;
+            weightDisplay.textContent = `${originalWeight} ${displayUnit}`;
             resultsDiv.appendChild(weightDisplay);
             
             // Add column headers
@@ -582,22 +676,42 @@
                 // Total column
                 const totalItem = document.createElement('div');
                 totalItem.className = 'weight-item';
-                totalItem.innerHTML = `
-                    <div class="circle" style="width: ${item.radius * 2}px; height: ${item.radius * 2}px;">
-                        ${item.weight}
-                    </div>
-                    <div class="count">${item.total}</div>
-                `;
+                
+                if (item.showCircle !== false) {
+                    totalItem.innerHTML = `
+                        <div class="circle" style="width: ${item.radius * 2}px; height: ${item.radius * 2}px;">
+                            ${item.weight}
+                        </div>
+                        <div class="count">${item.total}</div>
+                    `;
+                } else {
+                    totalItem.innerHTML = `
+                        <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+                            ${item.weight}
+                        </div>
+                        <div class="count">${item.total}</div>
+                    `;
+                }
                 
                 // Per Side column
                 const perSideItem = document.createElement('div');
                 perSideItem.className = 'weight-item';
-                perSideItem.innerHTML = `
-                    <div class="circle" style="width: ${item.radius * 2}px; height: ${item.radius * 2}px;">
-                        ${item.weight}
-                    </div>
-                    <div class="count">${item.perSide}</div>
-                `;
+                
+                if (item.showCircle !== false) {
+                    perSideItem.innerHTML = `
+                        <div class="circle" style="width: ${item.radius * 2}px; height: ${item.radius * 2}px;">
+                            ${item.weight}
+                        </div>
+                        <div class="count">${item.perSide}</div>
+                    `;
+                } else {
+                    perSideItem.innerHTML = `
+                        <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+                            ${item.weight}
+                        </div>
+                        <div class="count">${item.perSide}</div>
+                    `;
+                }
                 
                 row.appendChild(totalItem);
                 row.appendChild(perSideItem);
