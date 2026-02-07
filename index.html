@@ -294,7 +294,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.15</div>
+    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.16</div>
     
     <div class="easter-egg-overlay" id="easter-egg">
         <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
@@ -324,7 +324,7 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.15</div>
+        <div class="menu-version">v2.16</div>
     </div>
     
     <div class="container">
@@ -661,6 +661,12 @@
             
             // Clear input field after conversion
             document.getElementById('weight-input').value = '';
+            
+            // Scroll to bottom after conversion
+            setTimeout(() => {
+                const container = document.querySelector('.container');
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            }, 100);
         }
         
         function performPlateConversion(inputWeight) {
