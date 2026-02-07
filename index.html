@@ -453,7 +453,34 @@
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./service-worker.js')
-                .then(registration => console.log('Service Worker registered'))
+                .then(registration => {
+                    console.log('Service Worker registered');
+                    
+                    // Check for updates every time the page loads
+                    registration.update();
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated' && !navigator.serviceWorker.controller) {
+                                // First install, no need to reload
+                                return;
+                            }
+                            if (newWorker.state === 'activated') {
+                                // Show a brief message then reload
+                                const updateMsg = document.createElement('div');
+                                updateMsg.textContent = 'Updating to latest version...';
+                                updateMsg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#4CAF50;color:white;padding:20px;border-radius:10px;z-index:10000;font-size:16px;';
+                                document.body.appendChild(updateMsg);
+                                
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1500);
+                            }
+                        });
+                    });
+                })
                 .catch(error => console.log('Service Worker registration failed:', error));
         }
         
