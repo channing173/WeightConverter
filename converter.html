@@ -196,6 +196,13 @@
             
             let numsmalls = Math.trunc(number / 2.5);
             if (numsmalls % 2 !== 0) numsmalls -= 1;
+
+            // Ensure no negative plate counts
+            num45s = Math.max(0, num45s);
+            num25s = Math.max(0, num25s);
+            num10s = Math.max(0, num10s);
+            num5s = Math.max(0, num5s);
+            numsmalls = Math.max(0, numsmalls);
             
             // Display results
             displayResults([
@@ -218,7 +225,8 @@
             resultsDiv.appendChild(headers);
             
             // Add weight rows
-            weights.forEach(item => {
+            // Only render plates with a non-zero total
+            weights.filter(item => item.total > 0).forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'weight-row';
                 

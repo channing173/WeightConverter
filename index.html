@@ -727,6 +727,13 @@
                 let numsmalls = Math.trunc(number / 2.5);
                 if (numsmalls % 2 !== 0) numsmalls -= 1;
                 
+                // Ensure no negative plate counts
+                num45s = Math.max(0, num45s);
+                num25s = Math.max(0, num25s);
+                num10s = Math.max(0, num10s);
+                num5s = Math.max(0, num5s);
+                numsmalls = Math.max(0, numsmalls);
+                
                 weights = [
                     { weight: '45', total: num45s, perSide: num45s / 2, radius: 45, showCircle: true },
                     { weight: '25', total: num25s, perSide: num25s / 2, radius: 30, showCircle: true },
@@ -758,6 +765,14 @@
                 
                 let num1_25s = Math.trunc(number / 2.75578); // 1.25kg in lbs
                 if (num1_25s % 2 !== 0) num1_25s -= 1;
+                
+                // Ensure no negative plate counts for kg plates
+                num20s = Math.max(0, num20s);
+                num15s = Math.max(0, num15s);
+                num10s = Math.max(0, num10s);
+                num5s = Math.max(0, num5s);
+                num2_5s = Math.max(0, num2_5s);
+                num1_25s = Math.max(0, num1_25s);
                 
                 weights = [
                     { weight: '20', total: num20s, perSide: num20s / 2, radius: 45, showCircle: true },
@@ -812,8 +827,8 @@
             headers.innerHTML = '<div>Total</div><div>Per Side</div>';
             resultsDiv.appendChild(headers);
             
-            // Add weight rows
-            weights.forEach(item => {
+            // Add weight rows (only render plates with a non-zero total)
+            weights.filter(item => item.total > 0).forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'weight-row';
                 
