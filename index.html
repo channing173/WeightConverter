@@ -18,6 +18,9 @@
             --circle-border: black;
             --button-bg: #4CAF50;
             --button-hover: #45a049;
+            --choice-bg: #f0f4ff;
+            --choice-border: rgba(0,0,0,0.06);
+            --choice-text: var(--text-color);
         }
         
         [data-theme="dark"] {
@@ -28,6 +31,9 @@
             --circle-border: #e0e0e0;
             --button-bg: #4CAF50;
             --button-hover: #45a049;
+            --choice-bg: #3a3a40;
+            --choice-border: rgba(255,255,255,0.06);
+            --choice-text: var(--text-color);
         }
         
         body {
@@ -86,6 +92,45 @@
         
         .menu-button:hover {
             background-color: rgba(128, 128, 128, 0.2);
+        }
+
+        /* Workout choice cards follow theme */
+        .choice {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--choice-bg);
+            color: var(--choice-text);
+            border: 1px solid var(--choice-border);
+            transition: background 0.2s, border-color 0.2s;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .choice:hover { background: color-mix(in srgb, var(--choice-bg) 85%, #000 15%); }
+
+        .choice.active {
+            background: color-mix(in srgb, var(--button-bg) 12%, var(--choice-bg) 88%);
+            border-color: var(--button-bg);
+        }
+
+        /* Workout detail boxes */
+        .week-btn, .day-btn, .exercise-btn {
+            transition: background 0.2s;
+        }
+
+        .week-btn:hover, .day-btn:hover, .exercise-btn:hover {
+            opacity: 0.9;
+        }
+
+        .exercise-detail {
+            background: var(--choice-bg);
+            border-left: 4px solid var(--button-bg);
+            border-radius: 4px;
         }
         
         .hamburger {
@@ -295,7 +340,7 @@
     </style>
 </head>
 <body>
-    <div class="app-title" id="app-title">Peter's All-In-One Conversion Tool v2.27</div>
+    <div class="app-title" id="app-title">Loadr v0.2</div>
     
     <div class="easter-egg-overlay" id="easter-egg">
         <img src="peter.jpeg" alt="Easter Egg" class="easter-egg-image">
@@ -311,6 +356,9 @@
     
     <div class="menu">
         <div class="menu-item">
+            <button class="menu-button" onclick="showPage('workout')">Workout Planner</button>
+        </div>
+        <div class="menu-item">
             <button class="menu-button" onclick="showPage('plate')">Plate Converter</button>
         </div>
         <div class="menu-item">
@@ -325,12 +373,35 @@
         <div class="menu-item">
             <button class="menu-button" onclick="forceUpdate()">Update</button>
         </div>
-        <div class="menu-version">v2.27</div>
+        <div class="menu-version">v0.2</div>
     </div>
     
     <div class="container">
+        <!-- Workout Planner Page -->
+        <div id="workout-page" class="page active">
+            <h1>Workout Planner</h1>
+            <div class="small" style="margin-bottom:12px">Choose your focus below to get a simple starter plan.</div>
+
+            <div class="choices" role="tablist" style="display:flex;gap:12px;margin-bottom:12px">
+                <div class="choice" id="power" role="tab" tabindex="0" onclick="selectProgram('power')">
+                    <strong>Powerlifting</strong>
+                    <div class="small">Strength: squat, bench, deadlift</div>
+                </div>
+                <div class="choice" id="body" role="tab" tabindex="0" onclick="selectProgram('body')">
+                    <strong>Bodybuilding</strong>
+                    <div class="small">Hypertrophy: splits & volume</div>
+                </div>
+                <div class="choice" id="general" role="tab" tabindex="0" onclick="selectProgram('general')">
+                    <strong>General Health</strong>
+                    <div class="small">Balanced: cardio & mobility</div>
+                </div>
+            </div>
+
+            <div id="plan" class="plan">Select a program to see a sample 4-week outline.</div>
+        </div>
+
         <!-- Plate Converter Page -->
-        <div id="plate-page" class="page active">
+        <div id="plate-page" class="page">
             <h1>Plate Converter</h1>
             
             <div class="input-section">
@@ -455,11 +526,13 @@
         }
         
         // Page switching functionality
-        function showPage(pageName) {
+        function showPage(pageName, closeMenu = true) {
             const pages = document.querySelectorAll('.page');
             pages.forEach(page => page.classList.remove('active'));
-            
-            if (pageName === 'plate') {
+
+            if (pageName === 'workout') {
+                document.getElementById('workout-page').classList.add('active');
+            } else if (pageName === 'plate') {
                 document.getElementById('plate-page').classList.add('active');
                 // Restore last plate results if they exist
                 if (lastPlateResults) {
@@ -472,8 +545,8 @@
                     document.getElementById('unit-results').innerHTML = lastUnitResults;
                 }
             }
-            
-            toggleMenu();
+
+            if (closeMenu) toggleMenu();
         }
         
         // Unit conversion functionality
@@ -880,6 +953,588 @@
             // Store the results
             lastPlateResults = resultsDiv.innerHTML;
         }
+
+            // Workout planner data structure: program > weeks > days > exercises
+            const workoutPlans = {
+                power: { weeks: [
+                    { num: 1, days: [
+                        { name: "Day A", exercises: [
+                            { name: "Squat", sets: 3, reps: 5 },
+                            { name: "Bench", sets: 3, reps: 5 },
+                            { name: "Row", sets: 3, reps: 8 }
+                        ]},
+                        { name: "Day B", exercises: [
+                            { name: "Deadlift", sets: 1, reps: 5 },
+                            { name: "OHP", sets: 3, reps: 5 },
+                            { name: "Pullup", sets: 3, reps: "6-8" }
+                        ]},
+                        { name: "Day C", exercises: [
+                            { name: "Squat (Lighter)", sets: 3, reps: 5 },
+                            { name: "Bench (Volume)", sets: 3, reps: 5 },
+                            { name: "Hamstring Work", sets: 3, reps: "8-10" }
+                        ]}
+                    ]},
+                    { num: 2, days: [
+                        { name: "Day A", exercises: [
+                            { name: "Squat", sets: 3, reps: 5 },
+                            { name: "Bench", sets: 3, reps: 5 },
+                            { name: "Row", sets: 3, reps: 8 }
+                        ]},
+                        { name: "Day B", exercises: [
+                            { name: "Deadlift", sets: 1, reps: 5 },
+                            { name: "OHP", sets: 3, reps: 5 },
+                            { name: "Pullup", sets: 3, reps: "6-8" }
+                        ]},
+                        { name: "Day C", exercises: [
+                            { name: "Squat (Lighter)", sets: 3, reps: 5 },
+                            { name: "Bench (Volume)", sets: 3, reps: 5 },
+                            { name: "Hamstring Work", sets: 3, reps: "8-10" }
+                        ]}
+                    ]},
+                    { num: 3, days: [
+                        { name: "Day A", exercises: [
+                            { name: "Squat", sets: 3, reps: 5 },
+                            { name: "Bench", sets: 3, reps: 5 },
+                            { name: "Row", sets: 3, reps: 8 }
+                        ]},
+                        { name: "Day B", exercises: [
+                            { name: "Deadlift", sets: 1, reps: 5 },
+                            { name: "OHP", sets: 3, reps: 5 },
+                            { name: "Pullup", sets: 3, reps: "6-8" }
+                        ]},
+                        { name: "Day C", exercises: [
+                            { name: "Squat (Lighter)", sets: 3, reps: 5 },
+                            { name: "Bench (Volume)", sets: 3, reps: 5 },
+                            { name: "Hamstring Work", sets: 3, reps: "8-10" }
+                        ]}
+                    ]},
+                    { num: 4, days: [
+                        { name: "Day A", exercises: [
+                            { name: "Squat", sets: 3, reps: 5 },
+                            { name: "Bench", sets: 3, reps: 5 },
+                            { name: "Row", sets: 3, reps: 8 }
+                        ]},
+                        { name: "Day B", exercises: [
+                            { name: "Deadlift", sets: 1, reps: 5 },
+                            { name: "OHP", sets: 3, reps: 5 },
+                            { name: "Pullup", sets: 3, reps: "6-8" }
+                        ]},
+                        { name: "Day C", exercises: [
+                            { name: "Squat (Lighter)", sets: 3, reps: 5 },
+                            { name: "Bench (Volume)", sets: 3, reps: 5 },
+                            { name: "Hamstring Work", sets: 3, reps: "8-10" }
+                        ]}
+                    ]}
+                ]},
+                body: { weeks: [
+                    { num: 1, days: [
+                        { name: "Chest + Triceps", exercises: [
+                            { name: "Bench Press", sets: 4, reps: "8-10" },
+                            { name: "Incline DB Press", sets: 3, reps: "8-10" },
+                            { name: "Tricep Dips", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Back + Biceps", exercises: [
+                            { name: "Barbell Rows", sets: 4, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" },
+                            { name: "Barbell Curls", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Legs", exercises: [
+                            { name: "Squats", sets: 4, reps: "8-10" },
+                            { name: "Leg Press", sets: 3, reps: "10-12" },
+                            { name: "Leg Curls", sets: 3, reps: "10-12" }
+                        ]},
+                        { name: "Shoulders + Arms", exercises: [
+                            { name: "Military Press", sets: 4, reps: "8-10" },
+                            { name: "Lateral Raises", sets: 3, reps: "12-15" },
+                            { name: "Hammer Curls", sets: 3, reps: "8-12" }
+                        ]}
+                    ]},
+                    { num: 2, days: [
+                        { name: "Chest + Triceps", exercises: [
+                            { name: "Bench Press", sets: 4, reps: "8-10" },
+                            { name: "Incline DB Press", sets: 3, reps: "8-10" },
+                            { name: "Tricep Dips", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Back + Biceps", exercises: [
+                            { name: "Barbell Rows", sets: 4, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" },
+                            { name: "Barbell Curls", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Legs", exercises: [
+                            { name: "Squats", sets: 4, reps: "8-10" },
+                            { name: "Leg Press", sets: 3, reps: "10-12" },
+                            { name: "Leg Curls", sets: 3, reps: "10-12" }
+                        ]},
+                        { name: "Shoulders + Arms", exercises: [
+                            { name: "Military Press", sets: 4, reps: "8-10" },
+                            { name: "Lateral Raises", sets: 3, reps: "12-15" },
+                            { name: "Hammer Curls", sets: 3, reps: "8-12" }
+                        ]}
+                    ]},
+                    { num: 3, days: [
+                        { name: "Chest + Triceps", exercises: [
+                            { name: "Bench Press", sets: 4, reps: "8-10" },
+                            { name: "Incline DB Press", sets: 3, reps: "8-10" },
+                            { name: "Tricep Dips", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Back + Biceps", exercises: [
+                            { name: "Barbell Rows", sets: 4, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" },
+                            { name: "Barbell Curls", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Legs", exercises: [
+                            { name: "Squats", sets: 4, reps: "8-10" },
+                            { name: "Leg Press", sets: 3, reps: "10-12" },
+                            { name: "Leg Curls", sets: 3, reps: "10-12" }
+                        ]},
+                        { name: "Shoulders + Arms", exercises: [
+                            { name: "Military Press", sets: 4, reps: "8-10" },
+                            { name: "Lateral Raises", sets: 3, reps: "12-15" },
+                            { name: "Hammer Curls", sets: 3, reps: "8-12" }
+                        ]}
+                    ]},
+                    { num: 4, days: [
+                        { name: "Chest + Triceps", exercises: [
+                            { name: "Bench Press", sets: 4, reps: "8-10" },
+                            { name: "Incline DB Press", sets: 3, reps: "8-10" },
+                            { name: "Tricep Dips", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Back + Biceps", exercises: [
+                            { name: "Barbell Rows", sets: 4, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" },
+                            { name: "Barbell Curls", sets: 3, reps: "8-12" }
+                        ]},
+                        { name: "Legs", exercises: [
+                            { name: "Squats", sets: 4, reps: "8-10" },
+                            { name: "Leg Press", sets: 3, reps: "10-12" },
+                            { name: "Leg Curls", sets: 3, reps: "10-12" }
+                        ]},
+                        { name: "Shoulders + Arms", exercises: [
+                            { name: "Military Press", sets: 4, reps: "8-10" },
+                            { name: "Lateral Raises", sets: 3, reps: "12-15" },
+                            { name: "Hammer Curls", sets: 3, reps: "8-12" }
+                        ]}
+                    ]}
+                ]},
+                general: { weeks: [
+                    { num: 1, days: [
+                        { name: "Full-Body (A)", exercises: [
+                            { name: "Squat", sets: 3, reps: "8-10" },
+                            { name: "Bench Press", sets: 3, reps: "8-10" },
+                            { name: "Rows", sets: 3, reps: "8-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]},
+                        { name: "Full-Body (B)", exercises: [
+                            { name: "Deadlift", sets: 3, reps: "5-8" },
+                            { name: "OHP", sets: 3, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]}
+                    ]},
+                    { num: 2, days: [
+                        { name: "Full-Body (A)", exercises: [
+                            { name: "Squat", sets: 3, reps: "8-10" },
+                            { name: "Bench Press", sets: 3, reps: "8-10" },
+                            { name: "Rows", sets: 3, reps: "8-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]},
+                        { name: "Full-Body (B)", exercises: [
+                            { name: "Deadlift", sets: 3, reps: "5-8" },
+                            { name: "OHP", sets: 3, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]}
+                    ]},
+                    { num: 3, days: [
+                        { name: "Full-Body (A)", exercises: [
+                            { name: "Squat", sets: 3, reps: "8-10" },
+                            { name: "Bench Press", sets: 3, reps: "8-10" },
+                            { name: "Rows", sets: 3, reps: "8-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]},
+                        { name: "Full-Body (B)", exercises: [
+                            { name: "Deadlift", sets: 3, reps: "5-8" },
+                            { name: "OHP", sets: 3, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]}
+                    ]},
+                    { num: 4, days: [
+                        { name: "Full-Body (A)", exercises: [
+                            { name: "Squat", sets: 3, reps: "8-10" },
+                            { name: "Bench Press", sets: 3, reps: "8-10" },
+                            { name: "Rows", sets: 3, reps: "8-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]},
+                        { name: "Full-Body (B)", exercises: [
+                            { name: "Deadlift", sets: 3, reps: "5-8" },
+                            { name: "OHP", sets: 3, reps: "8-10" },
+                            { name: "Pullups", sets: 3, reps: "6-10" }
+                        ]},
+                        { name: "Cardio/Mobility", exercises: [
+                            { name: "Light Cardio", sets: 1, reps: "20-30 min" },
+                            { name: "Stretching", sets: 1, reps: "10 min" }
+                        ]}
+                    ]}
+                ]}
+            };
+
+            let currentProgram = null;
+            let currentWeek = null;
+            let currentDay = null;
+            
+            // Store base weights for exercises (from week 1)
+            let workoutWeights = {};
+            
+            // Load weights from localStorage
+            function loadWorkoutWeights() {
+                const saved = localStorage.getItem('workoutWeights');
+                if (saved) {
+                    workoutWeights = JSON.parse(saved);
+                }
+            }
+            
+            // Save weights to localStorage
+            function saveWorkoutWeights() {
+                localStorage.setItem('workoutWeights', JSON.stringify(workoutWeights));
+            }
+            
+            // Create a unique key for each exercise
+            function getExerciseKey(program, exerciseName) {
+                return `${program}:${exerciseName}`;
+            }
+            
+            // Calculate plates needed for a given weight
+            function calculatePlateDisplay(inputWeight, unit) {
+                let number = inputWeight;
+                const originalWeight = number;
+                const displayUnit = unit;
+                
+                // Convert to lbs if in kg mode for calculation
+                if (unit === 'kg') {
+                    number = number * 2.20462;
+                }
+                
+                // No barbell subtraction for exercise weights - just show the total weight
+                
+                // Calculate weights based on unit system
+                let weights;
+                if (unit === 'lbs') {
+                    let num45s = Math.trunc(number / 45);
+                    if (num45s % 2 !== 0) num45s -= 1;
+                    number -= num45s * 45;
+                    
+                    let num25s = Math.trunc(number / 25);
+                    if (num25s % 2 !== 0) num25s -= 1;
+                    number -= num25s * 25;
+                    
+                    let num10s = Math.trunc(number / 10);
+                    if (num10s % 2 !== 0) num10s -= 1;
+                    number -= num10s * 10;
+                    
+                    let num5s = Math.trunc(number / 5);
+                    if (num5s % 2 !== 0) num5s -= 1;
+                    number -= num5s * 5;
+                    
+                    let numsmalls = Math.trunc(number / 2.5);
+                    if (numsmalls % 2 !== 0) numsmalls -= 1;
+                    
+                    num45s = Math.max(0, num45s);
+                    num25s = Math.max(0, num25s);
+                    num10s = Math.max(0, num10s);
+                    num5s = Math.max(0, num5s);
+                    numsmalls = Math.max(0, numsmalls);
+                    
+                    weights = [
+                        { weight: '45', total: num45s, perSide: num45s / 2, radius: 45 },
+                        { weight: '25', total: num25s, perSide: num25s / 2, radius: 30 },
+                        { weight: '10', total: num10s, perSide: num10s / 2, radius: 20 },
+                        { weight: '5', total: num5s, perSide: num5s / 2, radius: 15 },
+                        { weight: '2.5', total: numsmalls, perSide: numsmalls / 2, radius: 12 }
+                    ];
+                } else {
+                    let num20s = Math.trunc(number / 44.0925);
+                    if (num20s % 2 !== 0) num20s -= 1;
+                    number -= num20s * 44.0925;
+                    
+                    let num15s = Math.trunc(number / 33.0693);
+                    if (num15s % 2 !== 0) num15s -= 1;
+                    number -= num15s * 33.0693;
+                    
+                    let num10s = Math.trunc(number / 22.0462);
+                    if (num10s % 2 !== 0) num10s -= 1;
+                    number -= num10s * 22.0462;
+                    
+                    let num5s = Math.trunc(number / 11.0231);
+                    if (num5s % 2 !== 0) num5s -= 1;
+                    number -= num5s * 11.0231;
+                    
+                    let num2_5s = Math.trunc(number / 5.51156);
+                    if (num2_5s % 2 !== 0) num2_5s -= 1;
+                    number -= num2_5s * 5.51156;
+                    
+                    let num1_25s = Math.trunc(number / 2.75578);
+                    if (num1_25s % 2 !== 0) num1_25s -= 1;
+                    
+                    num20s = Math.max(0, num20s);
+                    num15s = Math.max(0, num15s);
+                    num10s = Math.max(0, num10s);
+                    num5s = Math.max(0, num5s);
+                    num2_5s = Math.max(0, num2_5s);
+                    num1_25s = Math.max(0, num1_25s);
+                    
+                    weights = [
+                        { weight: '20', total: num20s, perSide: num20s / 2, radius: 45 },
+                        { weight: '15', total: num15s, perSide: num15s / 2, radius: 35 },
+                        { weight: '10', total: num10s, perSide: num10s / 2, radius: 25 },
+                        { weight: '5', total: num5s, perSide: num5s / 2, radius: 18 },
+                        { weight: '2.5', total: num2_5s, perSide: num2_5s / 2, radius: 12 },
+                        { weight: '1.25', total: num1_25s, perSide: num1_25s / 2, radius: 10 }
+                    ];
+                }
+                
+                // Generate HTML for plate display
+                let html = `<div style="font-size:18px;font-weight:bold;margin-bottom:10px;color:var(--button-bg)">${originalWeight.toFixed(1)} ${displayUnit}</div>`;
+                html += '<div style="display:flex;justify-content:space-around;font-size:12px;margin-bottom:8px"><div>Total</div><div>Per Side</div></div>';
+                
+                weights.filter(item => item.total > 0).forEach(item => {
+                    html += `<div style="display:flex;justify-content:space-around;margin-bottom:12px">`;
+                    html += `<div style="display:flex;flex-direction:column;align-items:center">`;
+                    html += `<div style="width:${item.radius * 2}px;height:${item.radius * 2}px;border-radius:50%;background:var(--circle-bg);border:2px solid var(--circle-border);display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:12px">${item.weight}</div>`;
+                    html += `<div style="margin-top:4px;font-weight:bold">${item.total}</div></div>`;
+                    html += `<div style="display:flex;flex-direction:column;align-items:center">`;
+                    html += `<div style="width:${item.radius * 2}px;height:${item.radius * 2}px;border-radius:50%;background:var(--circle-bg);border:2px solid var(--circle-border);display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:12px">${item.weight}</div>`;
+                    html += `<div style="margin-top:4px;font-weight:bold">${item.perSide}</div></div></div>`;
+                });
+                
+                return html;
+            }
+
+            function selectProgram(key) {
+                document.querySelectorAll('.choice').forEach(el => el.classList.remove('active'));
+                const el = document.getElementById(key);
+                if (el) el.classList.add('active');
+                currentProgram = key;
+                currentWeek = null;
+                displayWeeks(key);
+            }
+
+            function displayWeeks(key) {
+                const planDiv = document.getElementById('plan');
+                const weeks = workoutPlans[key].weeks;
+                let html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="week-buttons">';
+                weeks.forEach(week => {
+                    html += `<button onclick="showWeek('${key}', ${week.num})" style="flex:1;min-width:70px;padding:10px;border:none;background:var(--choice-bg);color:var(--choice-text);border:1px solid var(--choice-border);border-radius:4px;cursor:pointer" class="week-btn" data-week="${week.num}">Week ${week.num}</button>`;
+                });
+                html += '</div><div id="week-content" style="margin-top:12px"></div>';
+                planDiv.innerHTML = html;
+            }
+
+            function showWeek(key, weekNum) {
+                currentWeek = weekNum;
+                
+                // Update week button styles
+                document.querySelectorAll('.week-btn').forEach(btn => {
+                    if (parseInt(btn.dataset.week) === weekNum) {
+                        btn.style.background = 'color-mix(in srgb, var(--button-bg) 12%, var(--choice-bg) 88%)';
+                        btn.style.borderColor = 'var(--button-bg)';
+                    } else {
+                        btn.style.background = 'var(--choice-bg)';
+                        btn.style.borderColor = 'var(--choice-border)';
+                    }
+                });
+                
+                const week = workoutPlans[key].weeks.find(w => w.num === weekNum);
+                const contentDiv = document.getElementById('week-content');
+                let html = '';
+                
+                let dayIdx = 0;
+                week.days.forEach(day => {
+                    html += `<button onclick="showDay('${key}', ${weekNum}, ${dayIdx})" style="width:100%;padding:12px;margin-bottom:8px;background:var(--choice-bg);color:var(--choice-text);border:1px solid var(--choice-border);border-radius:4px;cursor:pointer;text-align:left;font-weight:bold" class="day-btn" data-week="${weekNum}" data-day="${dayIdx}">${day.name} ▼</button><div id="day-content-${dayIdx}" style="display:none"></div>`;
+                    dayIdx++;
+                });
+                
+                // Add export button for week 4 at the bottom
+                if (weekNum === 4) {
+                    html += `<button onclick="exportWeek4ToWeek1('${key}')" style="width:100%;padding:12px;margin-top:20px;background:var(--button-bg);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:14px">Export Week 4 → Week 1 (Restart)</button>`;
+                }
+                
+                contentDiv.innerHTML = html;
+            }
+            
+            function exportWeek4ToWeek1(key) {
+                let count = 0;
+                
+                // Get all exercises from the program
+                const program = workoutPlans[key];
+                program.weeks[0].days.forEach(day => {
+                    day.exercises.forEach(ex => {
+                        const exerciseKey = getExerciseKey(key, ex.name);
+                        const baseWeight = workoutWeights[exerciseKey];
+                        if (baseWeight) {
+                            // Calculate week 4 weight (base + 15)
+                            const week4Weight = baseWeight + 15;
+                            // Store as new week 1 base weight
+                            workoutWeights[exerciseKey] = week4Weight;
+                            count++;
+                        }
+                    });
+                });
+                
+                if (count === 0) {
+                    alert('No weights found to export. Set weights in Week 1 first.');
+                    return;
+                }
+                
+                saveWorkoutWeights();
+                alert(`✓ Exported ${count} exercise(s)!\n\nNow starting a new 4-week cycle at higher weights. Go to Week 1 to begin!`);
+                
+                // Navigate to week 1
+                showWeek(key, 1);
+            }
+
+            function showDay(key, weekNum, dayIdx) {
+                currentDay = dayIdx;
+                const week = workoutPlans[key].weeks.find(w => w.num === weekNum);
+                const day = week.days[dayIdx];
+                const dayContentDiv = document.getElementById(`day-content-${dayIdx}`);
+                
+                // Toggle expand/collapse
+                const isExpanded = dayContentDiv.style.display !== 'none';
+                if (isExpanded) {
+                    dayContentDiv.style.display = 'none';
+                    document.querySelector(`[data-week="${weekNum}"][data-day="${dayIdx}"]`).textContent = day.name + ' ▼';
+                    return;
+                }
+                
+                // Collapse all other days
+                document.querySelectorAll('[id^="day-content-"]').forEach(div => {
+                    div.style.display = 'none';
+                });
+                document.querySelectorAll('.day-btn').forEach(btn => {
+                    const dayName = btn.textContent.replace(' ▼', '').replace(' ▲', '');
+                    btn.textContent = dayName + ' ▼';
+                });
+                
+                dayContentDiv.style.display = 'block';
+                document.querySelector(`[data-week="${weekNum}"][data-day="${dayIdx}"]`).textContent = day.name + ' ▲';
+                
+                let html = `<div style="background:var(--choice-bg);padding:12px;border-radius:4px;margin:0 0 8px 0">`;
+                day.exercises.forEach((ex, exIdx) => {
+                    html += `<button onclick="showExercise(event, '${key}', ${weekNum}, ${dayIdx}, ${exIdx})" style="display:block;width:100%;padding:8px;margin:8px 0;background:var(--container-bg);color:var(--text-color);border:1px solid var(--choice-border);border-radius:4px;cursor:pointer;text-align:left" class="exercise-btn" data-exercise="${exIdx}">${ex.name}</button><div id="exercise-detail-${weekNum}-${dayIdx}-${exIdx}" style="display:none;margin:4px 0 4px 8px;padding:8px;background:var(--choice-bg);border-left:4px solid var(--button-bg);border-radius:4px;"></div>`;
+                });
+                html += '</div>';
+                dayContentDiv.innerHTML = html;
+            }
+
+            function showExercise(event, key, weekNum, dayIdx, exIdx) {
+                event.stopPropagation();
+                
+                const week = workoutPlans[key].weeks.find(w => w.num === weekNum);
+                const day = week.days[dayIdx];
+                const ex = day.exercises[exIdx];
+                const detailDiv = document.getElementById(`exercise-detail-${weekNum}-${dayIdx}-${exIdx}`);
+                const exerciseKey = getExerciseKey(key, ex.name);
+                
+                // Toggle expand/collapse
+                const isExpanded = detailDiv.style.display !== 'none';
+                if (isExpanded) {
+                    detailDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Collapse all other exercises in this day
+                document.querySelectorAll(`[id^="exercise-detail-${weekNum}-${dayIdx}-"]`).forEach(div => {
+                    div.style.display = 'none';
+                });
+                
+                detailDiv.style.display = 'block';
+                let html = `<strong>${ex.name}</strong><br>Sets: ${ex.sets} | Reps: ${ex.reps}<br><br>`;
+                
+                // Handle weight display and input
+                if (weekNum === 1) {
+                    // Week 1: Show input field for weight
+                    const storedWeight = workoutWeights[exerciseKey];
+                    const defaultValue = storedWeight ? storedWeight.toFixed(1) : '';
+                    html += `<div style="margin-top:10px">`;
+                    html += `<label style="display:block;margin-bottom:6px">Weight (${globalUnit}):</label>`;
+                    html += `<input type="number" id="weight-input-${exIdx}" value="${defaultValue}" placeholder="Enter weight" step="0.1" style="width:80px;padding:6px;border:1px solid var(--choice-border);border-radius:4px;background:var(--container-bg);color:var(--text-color);margin-bottom:8px">`;
+                    html += `<button onclick="saveExerciseWeight('${key}', '${ex.name}', ${exIdx}, ${weekNum})" style="padding:6px 12px;background:var(--button-bg);color:white;border:none;border-radius:4px;cursor:pointer">Save</button>`;
+                    html += `</div>`;
+                    if (storedWeight) {
+                        html += `<div style="margin-top:12px;padding:10px;background:var(--container-bg);border-radius:4px">${calculatePlateDisplay(storedWeight, globalUnit)}</div>`;
+                    }
+                } else {
+                    // Weeks 2-4: Calculate weight with +5 increase per week
+                    const baseWeight = workoutWeights[exerciseKey];
+                    if (baseWeight) {
+                        const weekMultiplier = weekNum - 1;
+                        const calculatedWeight = baseWeight + (weekMultiplier * 5);
+                        html += `<div style="margin-top:10px;padding:10px;background:var(--container-bg);border-radius:4px">Week ${weekNum} weight (Base + ${weekMultiplier * 5}):<br>${calculatePlateDisplay(calculatedWeight, globalUnit)}</div>`;
+                    } else {
+                        html += `<div style="margin-top:10px;color:var(--text-color)">Set weight in Week 1 to see progression</div>`;
+                    }
+                }
+                
+                detailDiv.innerHTML = html;
+            }
+            
+            function saveExerciseWeight(key, exerciseName, exIdx, weekNum) {
+                const inputId = `weight-input-${exIdx}`;
+                const input = document.getElementById(inputId);
+                const weight = parseFloat(input.value);
+                
+                if (isNaN(weight) || weight <= 0) {
+                    alert('Please enter a valid weight');
+                    return;
+                }
+                
+                const exerciseKey = getExerciseKey(key, exerciseName);
+                workoutWeights[exerciseKey] = weight;
+                saveWorkoutWeights();
+                
+                // Update just the detail div content, don't toggle display
+                const detailDiv = document.getElementById(`exercise-detail-${weekNum}-${currentDay}-${exIdx}`);
+                const ex = workoutPlans[key].weeks.find(w => w.num === weekNum).days[currentDay].exercises[exIdx];
+                let html = `<strong>${ex.name}</strong><br>Sets: ${ex.sets} | Reps: ${ex.reps}<br><br>`;
+                html += `<div style="padding:10px;background:var(--container-bg);border-radius:4px;margin-bottom:10px"><strong style="color:var(--button-bg)">✓ Weight saved: ${weight.toFixed(1)} ${globalUnit}</strong></div>`;
+                html += `<div style="padding:10px;background:var(--container-bg);border-radius:4px">${calculatePlateDisplay(weight, globalUnit)}</div>`;
+                detailDiv.innerHTML = html;
+            }
+
+            // Keyboard accessibility for workout choices
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.choice').forEach(el=>{
+                    el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); el.click(); } });
+                });
+
+                // Load saved weights
+                loadWorkoutWeights();
+                
+                // Default to general health
+                selectProgram('general');
+            });
     </script>
 </body>
 </html>
